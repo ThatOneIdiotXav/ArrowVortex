@@ -6,6 +6,19 @@ This is a continuation of the original project by Bram 'Fietsemaker' van de Wete
 
 See the [About this project](#about-this-project) section below for more information about this repository.
 
+--- 
+## "Why did you fork ArrowVortex?"
+**Boredom.**
+Got nothing else to do, to be honest.  
+Felt like learning C++ for a while, and this seemed like an easy excuse.  
+_I'll try to add more than just FNF chart support in the future, I promise..._
+
+## Changes made
+- Friday Night Funkin' chart support  
+Currently only supports the following formats:
+  - Psych Engine, version 1.X
+
+---
 ## Features
 
 Some of the features that ArrowVortex has to offer include:
