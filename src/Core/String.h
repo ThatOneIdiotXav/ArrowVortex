@@ -1,5 +1,6 @@
 #pragma once
 
+#include <json.hpp>
 #include <Core/Core.h>
 
 namespace Vortex {

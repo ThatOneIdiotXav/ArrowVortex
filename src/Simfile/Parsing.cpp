@@ -24,21 +24,21 @@ namespace Vortex {
 #define LOAD_ARGS StringRef path, Simfile* sim
 #define SAVE_ARGS const Simfile* sim, bool backup
 
-namespace Sm
-{
-	bool LoadSm(LOAD_ARGS);  // Defined in LoadSm.cpp
-	bool SaveSm(SAVE_ARGS);  // Defined in SaveSm.cpp
-	bool SaveSsc(SAVE_ARGS); // Defined in SaveSm.cpp
+namespace Sm {
+bool LoadSm(LOAD_ARGS);  // Defined in LoadSm.cpp
+bool SaveSm(SAVE_ARGS);  // Defined in SaveSm.cpp
+bool SaveSsc(SAVE_ARGS); // Defined in SaveSm.cpp
 };
-namespace Osu
-{
-	bool LoadOsu(LOAD_ARGS); // Defined in LoadOsu.cpp
-	bool SaveOsu(SAVE_ARGS); // Defined in SaveOsu.cpp
+namespace Osu {
+bool LoadOsu(LOAD_ARGS); // Defined in LoadOsu.cpp
+bool SaveOsu(SAVE_ARGS); // Defined in SaveOsu.cpp
 };
-namespace Dwi
-{
-	bool LoadDwi(LOAD_ARGS); // Defined in LoadDwi.cpp
-};
+namespace Dwi {
+bool LoadDwi(LOAD_ARGS); // Defined in LoadDwi.cpp
+}
+namespace Fnf {
+bool LoadFnf(LOAD_ARGS); // Defined in LoadFnf.cpp
+}
 
 // ================================================================================================
 // Parsing utilities.
@@ -97,7 +97,7 @@ bool ParseNextTag(char*& p, char*& outTag, char*& outVal)
 
 	outVal = p;
 	//Allow : and ; to be escaped
-	while(*p && (*p != ';' || *(p-1) == '\\') && !(p[0] == '\n' && p[1] == '#')) ++p;
+	while(*p && (*p != ';' || *(p - 1) == '\\') && !(p[0] == '\n' && p[1] == '#')) ++p;
 	if(*p) *p++ = 0;
 
 	return true;
@@ -192,7 +192,7 @@ bool ParseBeat(const char* str, int& outRow)
 static void ClearSimfile(Simfile& sim, Path& path)
 {
 	sim.~Simfile();
-	new (&sim) Simfile();
+	new(&sim) Simfile();
 	sim.dir = path.dir();
 	sim.file = path.name();
 }
@@ -207,6 +207,7 @@ bool LoadSimfile(Simfile& sim, StringRef path)
 	bool success = false;
 	String ext = filePath.ext();
 	Str::toLower(ext);
+
 	if(ext == "sm" || ext == "ssc")
 	{
 		success = Sm::LoadSm(filePath, &sim);
@@ -219,6 +220,10 @@ bool LoadSimfile(Simfile& sim, StringRef path)
 	{
 		success = Osu::LoadOsu(filePath, &sim);
 	}
+	else if(ext == "json")
+	{
+		success = Fnf::LoadFnf(filePath, &sim);
+	}
 	else
 	{
 		Debug::blockBegin(Debug::ERROR, "could not load sim");
@@ -226,18 +231,17 @@ bool LoadSimfile(Simfile& sim, StringRef path)
 		Debug::log("reason: unknown sim format\n");
 		Debug::blockEnd();
 	}
-	if(!success) return false;
 
-	return true;
+	return success;
 }
 
 bool SaveSimfile(const Simfile& sim, SimFormat format, bool backup)
 {
 	switch(format)
 	{
-		case SIM_SM:  return Sm::SaveSm(&sim, backup);
-		case SIM_SSC: return Sm::SaveSsc(&sim, backup);
-		case SIM_OSU: return Osu::SaveOsu(&sim, backup);
+	case SIM_SM: return Sm::SaveSm(&sim, backup);
+	case SIM_SSC: return Sm::SaveSsc(&sim, backup);
+	case SIM_OSU: return Osu::SaveOsu(&sim, backup);
 	};
 	return false;
 }

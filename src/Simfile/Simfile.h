@@ -18,6 +18,9 @@ enum SimFormat
 	SIM_OSZ,
 	SIM_DWI,
 
+	// Psych 1.X format
+	SIM_FNF_PSYCH1X,
+	
 	NUM_SIMFILE_FORMATS
 };
 

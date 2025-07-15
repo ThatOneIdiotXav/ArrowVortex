@@ -64,11 +64,12 @@ struct DialogEntry
 };
 
 static const char loadFilters[] =
-	"Supported Media (*.sm, *.ssc, *.dwi, *.osu, *.osz, *.ogg, *.mp3, *.wav)\0*.sm;*.ssc;*.dwi;*.osu;*.osz;*.ogg;*.mp3;*.wav\0"
+	"Supported Media (*.sm, *.ssc, *.dwi, *.osu, *.osz, *.json, *.ogg, *.mp3, *.wav)\0*.sm;*.ssc;*.dwi;*.osu;*.osz;*.json;*.ogg;*.mp3;*.wav\0"
 	"Stepmania/ITG (*.sm)\0*.sm\0"
 	"Stepmania 5 (*.ssc)\0*.ssc\0"
 	"Dance With Intensity (*.dwi)\0*.dwi\0"
 	"Osu!mania (*.osu, *.osz)\0*.osu;*.osz\0"
+	"Friday Night Funkin' (*.json)\0*.json\0"
 	"Ogg Vorbis (*.ogg)\0*.ogg\0"
 	"MP3 Audio (*.mp3)\0*.mp3\0"
 	"Waveform (*.wav)\0*.wav\0"
@@ -110,6 +111,7 @@ static const char* ToString(SimFormat format)
 {
 	if(format == SIM_SSC) return "ssc";
 	if(format == SIM_OSU) return "osu";
+	if(format == SIM_FNF_PSYCH1X) return "fnf_psych1x";
 	return "sm";
 }
 
@@ -117,6 +119,7 @@ static SimFormat ToSimFormat(StringRef str)
 {
 	if(str == "ssc") return SIM_SSC;
 	if(str == "osu") return SIM_OSU;
+	if(str == "fnf_psych1x") return SIM_FNF_PSYCH1X;
 	return SIM_SM;
 }
 

@@ -36,314 +36,321 @@ namespace Vortex {
 // ================================================================================================
 // SimfileManImpl :: member data.
 
-struct SimfileManImpl : public SimfileMan {
+struct SimfileManImpl : public SimfileMan
+{
 
-Chart* myChart;
-Simfile* mySimfile;
+	Chart* myChart;
+	Simfile* mySimfile;
 
-int myEndRow;
-int myChartIndex;
-bool myBackupOnSave;
+	int myEndRow;
+	int myChartIndex;
+	bool myBackupOnSave;
 
-History::EditId myApplyAddChartId;
-History::EditId myApplyRemoveChartId;
+	History::EditId myApplyAddChartId;
+	History::EditId myApplyRemoveChartId;
 
 // ================================================================================================
 // SimfileManImpl :: constructor and destructor.
 
-SimfileManImpl()
-	: myChart(nullptr)
-	, mySimfile(nullptr)
-	, myEndRow(0)
-	, myChartIndex(-1)
-	, myBackupOnSave(false)
-{
-	myApplyAddChartId    = gHistory->addCallback(ApplyAddChart,    ReleaseAddChart);
-	myApplyRemoveChartId = gHistory->addCallback(ApplyRemoveChart, ReleaseRemoveChart);
-}
+	SimfileManImpl()
+		: myChart(nullptr)
+		  , mySimfile(nullptr)
+		  , myEndRow(0)
+		  , myChartIndex(-1)
+		  , myBackupOnSave(false)
+	{
+		myApplyAddChartId = gHistory->addCallback(ApplyAddChart, ReleaseAddChart);
+		myApplyRemoveChartId = gHistory->addCallback(ApplyRemoveChart, ReleaseRemoveChart);
+	}
 
-~SimfileManImpl()
-{
-	delete mySimfile;
-}
+	~SimfileManImpl()
+	{
+		delete mySimfile;
+	}
 
 // ================================================================================================
 // SimfileManImpl :: update.
 
-void myUpdateEndRow()
-{
-	if(!mySimfile) return;
-
-	int endRow = 0;
-
-	// Row of the last segment.
-	auto segments = mySimfile->tempo->segments;
-	for(auto list = segments->begin(), listEnd = segments->end(); list != listEnd; ++list)
+	void myUpdateEndRow()
 	{
-		for(auto seg = list->begin(), end = list->end(); seg != end; ++seg)
+		if(!mySimfile) return;
+
+		int endRow = 0;
+
+		// Row of the last segment.
+		auto segments = mySimfile->tempo->segments;
+		for(auto list = segments->begin(), listEnd = segments->end(); list != listEnd; ++list)
 		{
-			endRow = max(endRow, seg->row);
+			for(auto seg = list->begin(), end = list->end(); seg != end; ++seg)
+			{
+				endRow = max(endRow, seg->row);
+			}
+		}
+
+		// Row of the last note.
+		if(myChart)
+		{
+			for(auto& n : myChart->notes)
+			{
+				endRow = max(endRow, n.endrow);
+			}
+		}
+
+		// Row of the end of the music.
+		endRow = max(endRow, gTempo->timeToRow(gMusic->getSongLength()));
+
+		// Round up to the next beat, with at least half a beat leeway.
+		int beatRow = endRow + ROWS_PER_BEAT * 3 / 2 - 1;
+		beatRow -= beatRow % ROWS_PER_BEAT;
+
+		// Round up to the next measure, with at least half a measure leeway.
+		int measureRow = endRow + (ROWS_PER_BEAT * 4) * 3 / 2 - 1;
+		measureRow -= measureRow % (ROWS_PER_BEAT * 4);
+
+		// Only use the measure row if the time is not too far off.
+		double timeDiff = gTempo->rowToTime(measureRow) - gTempo->rowToTime(endRow);
+		endRow = (timeDiff < 10.0) ? measureRow : beatRow;
+
+		// Check if the end row has changed.
+		if(myEndRow != endRow)
+		{
+			myEndRow = endRow;
+			gEditor->reportChanges(VCM_END_ROW_CHANGED);
 		}
 	}
 
-	// Row of the last note.
-	if(myChart) 
+	void myUpdateChart()
 	{
-		for (auto& n : myChart->notes)
+		if(mySimfile)
 		{
-			endRow = max(endRow, n.endrow);
+			myChartIndex = clamp(myChartIndex, -1, mySimfile->charts.size() - 1);
+			myChart = (myChartIndex >= 0) ? mySimfile->charts[myChartIndex] : nullptr;
+		}
+		else
+		{
+			myChartIndex = -1;
+			myChart = nullptr;
+		}
+
+		gStyle->update(myChart);
+		gChart->update(myChart);
+		gNoteskin->update(myChart);
+		gNotes->update(mySimfile, myChart);
+		gTempo->update(mySimfile, myChart);
+
+		gEditor->reportChanges(VCM_CHART_CHANGED | VCM_CHART_PROPERTIES_CHANGED);
+	}
+
+	void onChanges(int changes)
+	{
+		if(changes & (VCM_NOTES_CHANGED | VCM_TEMPO_CHANGED | VCM_MUSIC_IS_LOADED))
+		{
+			myUpdateEndRow();
 		}
 	}
-
-	// Row of the end of the music.
-	endRow = max(endRow, gTempo->timeToRow(gMusic->getSongLength()));
-
-	// Round up to the next beat, with at least half a beat leeway.
-	int beatRow = endRow + ROWS_PER_BEAT * 3 / 2 - 1;
-	beatRow -= beatRow % ROWS_PER_BEAT;
-
-	// Round up to the next measure, with at least half a measure leeway.
-	int measureRow = endRow + (ROWS_PER_BEAT * 4) * 3 / 2 - 1;
-	measureRow -= measureRow % (ROWS_PER_BEAT * 4);
-
-	// Only use the measure row if the time is not too far off.
-	double timeDiff = gTempo->rowToTime(measureRow) - gTempo->rowToTime(endRow);
-	endRow = (timeDiff < 10.0) ? measureRow : beatRow;
-
-	// Check if the end row has changed.
-	if(myEndRow != endRow)
-	{
-		myEndRow = endRow;
-		gEditor->reportChanges(VCM_END_ROW_CHANGED);
-	}
-}
-
-void myUpdateChart()
-{
-	if(mySimfile)
-	{
-		myChartIndex = clamp(myChartIndex, -1, mySimfile->charts.size() - 1);
-		myChart = (myChartIndex >= 0) ? mySimfile->charts[myChartIndex] : nullptr;
-	}
-	else
-	{
-		myChartIndex = -1;
-		myChart = nullptr;
-	}
-	
-	gStyle->update(myChart);
-	gChart->update(myChart);
-	gNoteskin->update(myChart);
-	gNotes->update(mySimfile, myChart);
-	gTempo->update(mySimfile, myChart);
-
-	gEditor->reportChanges(VCM_CHART_CHANGED | VCM_CHART_PROPERTIES_CHANGED);
-}
-
-void onChanges(int changes)
-{
-	if(changes & (VCM_NOTES_CHANGED | VCM_TEMPO_CHANGED | VCM_MUSIC_IS_LOADED))
-	{
-		myUpdateEndRow();
-	}
-}
 
 // ================================================================================================
 // SimfileManImpl :: open and close functions.
 
-bool load(StringRef path)
-{
-	close();
-
-	bool loadedFromAudio = false;
-
-	// Check if the path is empty.
-	if(path.empty()) return false;
-
-	// Extract the filename and extension.
-	Path file(path);
-	String filename = file.filename();
-	String ext = file.ext();
-	Str::toLower(ext);
-
-	// Create a new simfile.
-	mySimfile = new Simfile;
-	mySimfile->dir = file.dir();
-	mySimfile->file = file.name();
-	HudInfo("Opening: %s", filename.str());
-	
-	// Check if we are loading a stepmania simfile.
-	if(ext == "sm" || ext == "ssc" || ext == "dwi" || ext == "osu" || ext == "osz")
+	bool load(StringRef path)
 	{
-		if(!LoadSimfile(*mySimfile, path))
+		close();
+
+		bool loadedFromAudio = false;
+
+		// Check if the path is empty.
+		if(path.empty()) return false;
+
+		// Extract the filename and extension.
+		Path file(path);
+		String filename = file.filename();
+		String ext = file.ext();
+		Str::toLower(ext);
+
+		// Create a new simfile.
+		mySimfile = new Simfile;
+		mySimfile->dir = file.dir();
+		mySimfile->file = file.name();
+		HudInfo("Opening: %s", filename.str());
+
+		// Check if we are loading a stepmania simfile.
+		if(
+			ext == "sm"
+			|| ext == "ssc"
+			|| ext == "dwi"
+			|| ext == "osu"
+			|| ext == "osz"
+			|| ext == "json")
 		{
-			close();
-			return false;
+			if(!LoadSimfile(*mySimfile, path))
+			{
+				close();
+				return false;
+			}
+			sortCharts();
+			myBackupOnSave = true;
 		}
-		sortCharts();
-		myBackupOnSave = true;
+		else // If not, assume it's an audio file.
+		{
+			mySimfile->music = filename;
+			mySimfile->tempo->segments->append(BpmChange(0, SIM_DEFAULT_BPM));
+			loadedFromAudio = true;
+		}
+
+		// Select the last non-edit chart.
+		myChartIndex = mySimfile->charts.size() - 1;
+		while(myChartIndex > 0 && mySimfile->charts[myChartIndex]->difficulty == DIFF_EDIT)
+		{
+			--myChartIndex;
+		}
+		myUpdateChart();
+
+		// Load music before filling in the metadata.
+		gMusic->load();
+
+		// Try to fill in some metadata.
+		gMetadata->update(mySimfile);
+		if(loadedFromAudio)
+		{
+			mySimfile->background = gMetadata->findBackgroundFile();
+			mySimfile->banner = gMetadata->findBannerFile();
+			mySimfile->title = gMusic->getTitle();
+			mySimfile->artist = gMusic->getArtist();
+		}
+
+		mySimfile->sanitize();
+
+		gHistory->onFileOpen(mySimfile);
+
+		gEditor->reportChanges(VCM_ALL_CHANGES);
+
+		return true;
 	}
-	else // If not, assume it's an audio file.
+
+	bool save(StringRef dir, StringRef name, SimFormat format)
 	{
-		mySimfile->music = filename;
-		mySimfile->tempo->segments->append(BpmChange(0, SIM_DEFAULT_BPM));
-		loadedFromAudio = true;
+		if(!mySimfile) return false;
+
+		// Update the song directory and filename.
+		mySimfile->dir = dir;
+		mySimfile->file = name;
+
+		// Save the simfile.
+		bool result = SaveSimfile(*mySimfile, format, myBackupOnSave);
+		myBackupOnSave = false;
+
+		gHistory->onFileSaved();
+
+		return result;
 	}
 
-	// Select the last non-edit chart.
-	myChartIndex = mySimfile->charts.size() - 1;
-	while(myChartIndex > 0 && mySimfile->charts[myChartIndex]->difficulty == DIFF_EDIT)
+	void close()
 	{
-		--myChartIndex;
+		if(!mySimfile) return;
+
+		delete mySimfile;
+		mySimfile = nullptr;
+
+		myUpdateChart();
+		myEndRow = 0;
+		myBackupOnSave = false;
+
+		gMusic->unload();
+		gHistory->onFileClosed();
+
+		gEditor->reportChanges(VCM_ALL_CHANGES);
 	}
-	myUpdateChart();
-
-	// Load music before filling in the metadata.
-	gMusic->load();
-
-	// Try to fill in some metadata.
-	gMetadata->update(mySimfile);
-	if(loadedFromAudio)
-	{
-		mySimfile->background = gMetadata->findBackgroundFile();
-		mySimfile->banner = gMetadata->findBannerFile();
-		mySimfile->title = gMusic->getTitle();
-		mySimfile->artist = gMusic->getArtist();
-	}
-
-	mySimfile->sanitize();
-
-	gHistory->onFileOpen(mySimfile);
-
-	gEditor->reportChanges(VCM_ALL_CHANGES);
-
-	return true;
-}
-
-bool save(StringRef dir, StringRef name, SimFormat format)
-{
-	if(!mySimfile) return false;
-
-	// Update the song directory and filename.
-	mySimfile->dir = dir;
-	mySimfile->file = name;
-
-	// Save the simfile.
-	bool result = SaveSimfile(*mySimfile, format, myBackupOnSave);
-	myBackupOnSave = false;
-
-	gHistory->onFileSaved();
-
-	return result;
-}
-
-void close()
-{
-	if(!mySimfile) return;
-
-	delete mySimfile;
-	mySimfile = nullptr;
-
-	myUpdateChart();
-	myEndRow = 0;
-	myBackupOnSave = false;
-
-	gMusic->unload();
-	gHistory->onFileClosed();
-
-	gEditor->reportChanges(VCM_ALL_CHANGES);
-}
 
 
 // ================================================================================================
 // SimfileManImpl :: add chart.
 
-static void ReleaseAddChart(ReadStream& in, bool hasBeenApplied)
-{
-	auto chart = in.read<Chart*>();
-	if(in.success() && !hasBeenApplied)
+	static void ReleaseAddChart(ReadStream& in, bool hasBeenApplied)
 	{
-		delete chart;
-	}
-}
-
-static String ApplyAddChart(ReadStream& in, History::Bindings bound, bool undo, bool redo)
-{
-	String msg;
-	auto chart = in.read<Chart*>();
-	if(in.success())
-	{
-		if(undo)
+		auto chart = in.read<Chart*>();
+		if(in.success() && !hasBeenApplied)
 		{
-			msg = SIMFILE_MAN->applyRemove(chart);
-		}
-		else
-		{
-			msg = SIMFILE_MAN->applyAdd(chart);
+			delete chart;
 		}
 	}
-	return msg;
-}
 
-void addChart(const Style* style, String artist, Difficulty difficulty, int meter)
-{
-	Chart* chart = new Chart;
+	static String ApplyAddChart(ReadStream& in, History::Bindings bound, bool undo, bool redo)
+	{
+		String msg;
+		auto chart = in.read<Chart*>();
+		if(in.success())
+		{
+			if(undo)
+			{
+				msg = SIMFILE_MAN->applyRemove(chart);
+			}
+			else
+			{
+				msg = SIMFILE_MAN->applyAdd(chart);
+			}
+		}
+		return msg;
+	}
 
-	chart->style = style;
-	chart->artist = artist;
-	chart->difficulty = difficulty;
-	chart->meter = meter;
+	void addChart(const Style* style, String artist, Difficulty difficulty, int meter)
+	{
+		Chart* chart = new Chart;
 
-	gHistory->addEntry(myApplyAddChartId, &chart, sizeof(chart));
-}
+		chart->style = style;
+		chart->artist = artist;
+		chart->difficulty = difficulty;
+		chart->meter = meter;
+
+		gHistory->addEntry(myApplyAddChartId, &chart, sizeof(chart));
+	}
 
 // ================================================================================================
 // SimfileManImpl :: apply remove chart.
 
-static void ReleaseRemoveChart(ReadStream& in, bool hasBeenApplied)
-{
-	auto chart = in.read<Chart*>();
-	if(in.success() && hasBeenApplied)
+	static void ReleaseRemoveChart(ReadStream& in, bool hasBeenApplied)
 	{
-		delete chart;
-	}
-}
-
-static String ApplyRemoveChart(ReadStream& in, History::Bindings bound, bool undo, bool redo)
-{
-	String msg;
-	auto chart = in.read<Chart*>();
-	if(in.success())
-	{
-		if(undo)
+		auto chart = in.read<Chart*>();
+		if(in.success() && hasBeenApplied)
 		{
-			msg = SIMFILE_MAN->applyAdd(chart);
-		}
-		else
-		{
-			msg = SIMFILE_MAN->applyRemove(chart);
+			delete chart;
 		}
 	}
-	return msg;
-}
 
-void removeChart(const Chart* chart)
-{
-	if(!chart) return;
-
-	if(mySimfile)
+	static String ApplyRemoveChart(ReadStream& in, History::Bindings bound, bool undo, bool redo)
 	{
-		int pos = mySimfile->charts.find((Chart*)chart);
-		if(pos == mySimfile->charts.size())
+		String msg;
+		auto chart = in.read<Chart*>();
+		if(in.success())
 		{
-			HudError("Trying to remove a chart that is not in the chart list.");
+			if(undo)
+			{
+				msg = SIMFILE_MAN->applyAdd(chart);
+			}
+			else
+			{
+				msg = SIMFILE_MAN->applyRemove(chart);
+			}
 		}
-		else
+		return msg;
+	}
+
+	void removeChart(const Chart* chart)
+	{
+		if(!chart) return;
+
+		if(mySimfile)
 		{
-			gHistory->addEntry(myApplyRemoveChartId, &chart, sizeof(chart));
+			int pos = mySimfile->charts.find((Chart*)chart);
+			if(pos == mySimfile->charts.size())
+			{
+				HudError("Trying to remove a chart that is not in the chart list.");
+			}
+			else
+			{
+				gHistory->addEntry(myApplyRemoveChartId, &chart, sizeof(chart));
+			}
 		}
 	}
-}
 
 // ================================================================================================
 // SimfileManImpl :: misc functions.
@@ -460,143 +467,143 @@ void removeChart(const Chart* chart)
 // ================================================================================================
 // SimfileManImpl :: low level chart functions.
 
-String applyAdd(Chart* chart)
-{
-	mySimfile->charts.push_back(chart);
-	sortCharts();
-	openChart(chart);
-	gEditor->reportChanges(VCM_CHART_LIST_CHANGED);
-	return "Added chart: " + chart->description();
-}
-
-String applyRemove(Chart* chart)
-{
-	int pos = mySimfile->charts.find(chart);
-	if(pos == mySimfile->charts.size())
+	String applyAdd(Chart* chart)
 	{
-		String err = "Failed to remove " + chart->description() + ", could not find it.";
-		HudError("%s", err.str());
+		mySimfile->charts.push_back(chart);
+		sortCharts();
+		openChart(chart);
+		gEditor->reportChanges(VCM_CHART_LIST_CHANGED);
+		return "Added chart: " + chart->description();
 	}
-	else
-	{
-		mySimfile->charts.erase(pos);
-		myUpdateChart();
-	}
-	gEditor->reportChanges(VCM_CHART_LIST_CHANGED);
-	return "Removed chart: " + chart->description();
-}
 
-void sortCharts()
-{
-	std::stable_sort(mySimfile->charts.begin(), mySimfile->charts.end(),
-	[](const Chart* a, const Chart* b)
+	String applyRemove(Chart* chart)
 	{
-		if(a->style != b->style)
+		int pos = mySimfile->charts.find(chart);
+		if(pos == mySimfile->charts.size())
 		{
-			return a->style->index < b->style->index;
+			String err = "Failed to remove " + chart->description() + ", could not find it.";
+			HudError("%s", err.str());
 		}
-		if(a->difficulty != b->difficulty)
+		else
 		{
-			return a->difficulty < b->difficulty;
+			mySimfile->charts.erase(pos);
+			myUpdateChart();
 		}
-		return a->meter < b->meter;
-	});
-}
+		gEditor->reportChanges(VCM_CHART_LIST_CHANGED);
+		return "Removed chart: " + chart->description();
+	}
+
+	void sortCharts()
+	{
+		std::stable_sort(mySimfile->charts.begin(), mySimfile->charts.end(),
+		                 [](const Chart* a, const Chart* b)
+		                 {
+			                 if(a->style != b->style)
+			                 {
+				                 return a->style->index < b->style->index;
+			                 }
+			                 if(a->difficulty != b->difficulty)
+			                 {
+				                 return a->difficulty < b->difficulty;
+			                 }
+			                 return a->meter < b->meter;
+		                 });
+	}
 
 // ================================================================================================
 // SimfileManImpl :: open chart.
 
-void openChart(int index)
-{
-	if(mySimfile && myChartIndex != index && index >= -1 && index < mySimfile->charts.size())
+	void openChart(int index)
 	{
-		myChartIndex = index;
-		myUpdateChart();
-		if(myChart)
+		if(mySimfile && myChartIndex != index && index >= -1 && index < mySimfile->charts.size())
 		{
-			String desc = myChart->description();
-			HudNote("Switched to %s :: %s", myChart->style->name.str(), desc.str());
-		}
-		else
-		{
-			HudNote("Switched to sync mode");
-		}
-	}
-}
-
-void openChart(const Chart* chart)
-{
-	if(mySimfile)
-	{
-		for(int i = 0; i < mySimfile->charts.size(); ++i)
-		{
-			if(mySimfile->charts[i] == chart)
+			myChartIndex = index;
+			myUpdateChart();
+			if(myChart)
 			{
-				openChart(i);
-				return;
+				String desc = myChart->description();
+				HudNote("Switched to %s :: %s", myChart->style->name.str(), desc.str());
+			}
+			else
+			{
+				HudNote("Switched to sync mode");
 			}
 		}
 	}
-	HudWarning("Trying to open a chart that is not in the chart list.");
-}
 
-void nextChart()
-{
-	openChart(myChartIndex + 1);
-}
+	void openChart(const Chart* chart)
+	{
+		if(mySimfile)
+		{
+			for(int i = 0; i < mySimfile->charts.size(); ++i)
+			{
+				if(mySimfile->charts[i] == chart)
+				{
+					openChart(i);
+					return;
+				}
+			}
+		}
+		HudWarning("Trying to open a chart that is not in the chart list.");
+	}
 
-void previousChart()
-{
-	openChart(myChartIndex - 1);
-}
+	void nextChart()
+	{
+		openChart(myChartIndex + 1);
+	}
+
+	void previousChart()
+	{
+		openChart(myChartIndex - 1);
+	}
 
 // ================================================================================================
 // SimfileManImpl :: get functions.
 
-String getDir() const
-{
-	return mySimfile ? mySimfile->dir : String();
-}
+	String getDir() const
+	{
+		return mySimfile ? mySimfile->dir : String();
+	}
 
-String getFile() const
-{
-	return mySimfile ? mySimfile->file : String();
-}
+	String getFile() const
+	{
+		return mySimfile ? mySimfile->file : String();
+	}
 
-int getNumCharts() const
-{
-	return mySimfile ? mySimfile->charts.size() : 0;
-}
+	int getNumCharts() const
+	{
+		return mySimfile ? mySimfile->charts.size() : 0;
+	}
 
-int getActiveChart() const
-{
-	return myChartIndex;
-}
+	int getActiveChart() const
+	{
+		return myChartIndex;
+	}
 
-const Chart* getChart(int index) const
-{
-	return mySimfile->charts.begin()[index];
-}
+	const Chart* getChart(int index) const
+	{
+		return mySimfile->charts.begin()[index];
+	}
 
-int getEndRow() const
-{
-	return myEndRow;
-}
+	int getEndRow() const
+	{
+		return myEndRow;
+	}
 
-bool isOpen() const
-{
-	return mySimfile != nullptr;
-}
+	bool isOpen() const
+	{
+		return mySimfile != nullptr;
+	}
 
-bool isClosed() const
-{
-	return mySimfile == nullptr;
-}
+	bool isClosed() const
+	{
+		return mySimfile == nullptr;
+	}
 
-const Simfile* get() const
-{
-	return mySimfile;
-}
+	const Simfile* get() const
+	{
+		return mySimfile;
+	}
 
 }; // SimfileManImpl
 

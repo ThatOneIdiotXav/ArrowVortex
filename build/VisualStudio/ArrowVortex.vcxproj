@@ -393,6 +393,7 @@
     <ClCompile Include="..\..\src\Managers\TempoMan.cpp" />
     <ClCompile Include="..\..\src\Simfile\Chart.cpp" />
     <ClCompile Include="..\..\src\Simfile\LoadDwi.cpp" />
+    <ClCompile Include="..\..\src\Simfile\LoadFnf.cpp" />
     <ClCompile Include="..\..\src\Simfile\NoteList.cpp" />
     <ClCompile Include="..\..\src\Simfile\Notes.cpp" />
     <ClCompile Include="..\..\src\Simfile\Parsing.cpp" />
