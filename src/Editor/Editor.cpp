@@ -152,7 +152,7 @@ SimFormat myDefaultSaveFormat;
 
 EditorImpl()
 {
-	gSystem->setWindowTitle("ArrowVortex");
+	gSystem->setWindowTitle("ArrowVortex (xavi.'s fork)");
 
 	for(auto& dialog : myDialogs)
 	{
@@ -447,7 +447,7 @@ bool closeSimfile()
 		Str::fmt msg("Do you want to save changes to %1?");
 		msg.arg(title);
 
-		int res = gSystem->showMessageDlg("ArrowVortex", msg, System::T_YES_NO_CANCEL, System::I_NONE);
+		int res = gSystem->showMessageDlg("ArrowVortex (xavi.'s fork)", msg, System::T_YES_NO_CANCEL, System::I_NONE);
 		if(res == System::R_CANCEL)
 		{
 			return false;
@@ -868,11 +868,11 @@ void updateTitle()
 		if(title.len() && subtitle.len()) title += " ";
 		title += subtitle;
 		if(hasChanges) title += "*";
-		title += " :: ArrowVortex";
+		title += "  ::  ArrowVortex (xavi.'s fork)";
 	}
 	else
 	{
-		title = "ArrowVortex";
+		title = "ArrowVortex (xavi.'s fork)";
 		if(hasChanges) title += "*";
 	}
 	gSystem->setWindowTitle(title);

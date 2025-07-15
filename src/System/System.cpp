@@ -262,7 +262,7 @@ SystemImpl()
 	, myCursor(Cursor::ARROW)
 	, myMousePos({0, 0})
 	, mySize({0, 0})
-	, myTitle("ArrowVortex")
+	, myTitle("ArrowVortex (xavi.'s fork)")
 	, myIsActive(false)
 	, myInitSuccesful(false)
 	, myIsTerminated(false)
@@ -294,7 +294,7 @@ SystemImpl()
 	// Create a window handle.
 	myStyle = WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_OVERLAPPEDWINDOW;
 	myExStyle = WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES | WS_EX_APPWINDOW;
-	myHWND = CreateWindowExW(myExStyle, myClassName, L"ArrowVortex", myStyle,
+	myHWND = CreateWindowExW(myExStyle, myClassName, L"ArrowVortex (xavi.'s fork)", myStyle,
 		CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, nullptr, nullptr, myInstance, this);
 
 	if(LogCheckpoint(myHWND != 0, "creating window")) return;
