@@ -98,7 +98,7 @@ static bool LessThan(const Vector<float> a, const Vector<float> b)
  * @param sim A pointer to a Simfile, used for the Editor itself
  * @return Whether or not the conversion process succeeded
  */
-bool Load(json json_file, Simfile* sim)
+bool Load(StringRef path, json json_file, Simfile* sim)
 {
 	Song song = Parse(json_file["song"]);
 
@@ -106,8 +106,8 @@ bool Load(json json_file, Simfile* sim)
 	sim->title = song.name;
 	sim->format = SIM_FNF_PSYCH1X;
 	sim->genre = "FNF";
-	// TODO: find song automatically (or implement multi-file playback)
-	sim->music = R"(D:\Games\FNF\Engine - Psych\assets\songs\milf\Inst.ogg)";
+
+	// TODO: make music be auto-detected
 
 	BpmChange initial;
 	initial.bpm = song.bpm;
@@ -185,7 +185,7 @@ bool LoadFnf(StringRef path, Simfile* sim)
 	}
 
 	// TODO: handle other formats that Psych 1.X
-	return Psych1X::Load(data, sim);
+	return Psych1X::Load(path, data, sim);
 
 	// return true;
 }
