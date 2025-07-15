@@ -35,8 +35,12 @@ jobs:
 #          cp ../oggenc2.exe .
 #          cd ..
 #          7z.exe a -tzip av.zip AV
+      - name: List contents of current folder
+        run: >
+          cd D:\a\ArrowVortex\ArrowVortex\release
+          ls
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
           name: ArrowVortex
-          path: 'D:\a\ArrowVortex\ArrowVortex\release\AV'
+          path: 'D:\a\ArrowVortex\ArrowVortex\AV'
