@@ -24,19 +24,19 @@ jobs:
           unzip oggenc.zip -d .
       - name: Build AV
         run: msbuild build\VisualStudio\ArrowVortex.vcxproj /p:Configuration=Release /p:Platform=x64         
-      - name: Collect into a zip
-        run: |
-          mkdir AV
-          cd AV
-          cp -r ../bin/assets .
-          cp -r ../bin/noteskins .
-          cp -r ../bin/settings .
-          cp ../bin/ArrowVortex.exe .
-          cp ../oggenc2.exe .
-          cd ..
-          7z.exe a -tzip av.zip AV
+#      - name: Collect into a zip
+#        run: |
+#          mkdir AV
+#          cd AV
+#          cp -r ../bin/assets .
+#          cp -r ../bin/noteskins .
+#          cp -r ../bin/settings .
+#          cp ../bin/ArrowVortex.exe .
+#          cp ../oggenc2.exe .
+#          cd ..
+#          7z.exe a -tzip av.zip AV
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
           name: ArrowVortex
-          path: 'D:\a\ArrowVortex\ArrowVortex\release\av.zip'
+          path: 'D:\a\ArrowVortex\ArrowVortex\release\AV'
