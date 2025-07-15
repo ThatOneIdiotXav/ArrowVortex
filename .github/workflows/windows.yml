@@ -24,7 +24,7 @@ jobs:
           unzip oggenc.zip -d .
       - name: Build AV
         run: msbuild build\VisualStudio\ArrowVortex.vcxproj /p:Configuration=Release /p:Platform=x64         
-      - name: Collect into an """"output folder""""
+      - name: Collect build files to upload
         run: |
           mkdir AV
           cd AV
@@ -33,9 +33,8 @@ jobs:
           cp -r ../bin/settings .
           cp ../bin/ArrowVortex.exe .
           cp ../oggenc2.exe .
-#          cd ..
-#          7z.exe a -tzip av.zip AV
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
+          name: ArrowVortex (xavi.'s fork)
           path: D:\a\ArrowVortex\ArrowVortex\release\AV
