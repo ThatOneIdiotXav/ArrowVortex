@@ -14,6 +14,8 @@ Felt like learning C++ for a while, and this seemed like an easy excuse.
 _I'll try to add more than just FNF chart support in the future, I promise..._
 
 ## Changes made
+- Title change  
+Just to identify that it's the fork you're using. (shows the `(xavi.'s fork)` suffix)
 - Friday Night Funkin' chart support  
 Currently only supports the following formats:
   - Psych Engine, version 1.X
