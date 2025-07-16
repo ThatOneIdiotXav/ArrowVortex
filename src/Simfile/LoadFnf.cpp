@@ -79,12 +79,6 @@ Song Parse(json j)
 	return o;
 }
 
-static bool LessThan(const Vector<float> a, const Vector<float> b)
-{
-	if(a[0] != b[0]) return a[0] < b[0];  // NOLINT(clang-diagnostic-float-equal)
-	return a[0] < b[0];
-}
-
 /**
  * Loads a Psych Engine, version 1.X, formatted file.
  * @param json_file A parsed .json file
@@ -119,11 +113,6 @@ bool Load(StringRef path, json json_file, Simfile* sim)
 	// "dance-routine" hides the colors for player nums, so.. yeah.
 	// "dance-double" it is.
 	c->style = gStyle->findStyle("dance-double", 8, 1);
-
-	if(!std::is_sorted(song.notes.begin(), song.notes.end(), LessThan))
-	{
-		std::sort(song.notes.begin(), song.notes.end(), LessThan);
-	}
 
 	TimingData timing;
 	timing.update(sim->tempo);
