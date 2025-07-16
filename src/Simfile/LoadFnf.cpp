@@ -13,11 +13,12 @@
 #include "Managers/StyleMan.h"
 #include "System/File.h"
 
+#include <cmath>
+
 using json = nlohmann::json;
 
 namespace Vortex {
 namespace Fnf {
-
 namespace Psych1X {
 
 struct Song
@@ -40,23 +41,15 @@ Song Parse(json j)
 {
 	Song o;
 
-	if(j.contains("charter"))
-		o.charter = j["charter"].get<std::string>().data();
-	else
-		o.charter = "Unknown";
-
-	if(j.contains("artist"))
-		o.artist = j["artist"].get<std::string>().data();
-	else
-		o.artist = "Unknown";
-
-	o.scrollspeed = j["speed"].get<float>();
-	o.stage = j["stage"].get<std::string>().data();
-	o.player1 = j["player1"].get<std::string>().data();
-	o.player2 = j["player2"].get<std::string>().data();
-	o.gf_version = j["gfVersion"].get<std::string>().data();
-	o.bpm = j["bpm"].get<float>();
-	o.name = j["song"].get<std::string>().data();
+	o.charter = j.contains("charter") ? j["charter"].get<std::string>().data() : "Unknown";
+	o.artist = j.contains("artist") ? j["artist"].get<std::string>().data() : "Unknown";
+	o.scrollspeed = j.contains("speed") ? j["speed"].get<float>() : 2.0;
+	o.stage = j.contains("stage") ? j["stage"].get<std::string>().data() : "stage";
+	o.player1 = j.contains("player1") ? j["player1"].get<std::string>().data() : "bf";
+	o.player2 = j.contains("player2") ? j["player2"].get<std::string>().data() : "dad";
+	o.gf_version = j.contains("gfVersion") ? j["gfVersion"].get<std::string>().data() : "gf";
+	o.bpm = j.contains("bpm") ? j["bpm"].get<float>() : -1;
+	o.name = j.contains("song") ? j["song"].get<std::string>().data() : "!!**!! UNKNOWN SONG !!**!!";
 
 	std::cout << "Parsed metadata for " << o.name.str() << "\n";
 
@@ -102,6 +95,11 @@ bool Load(StringRef path, json json_file, Simfile* sim)
 {
 	Song song = Parse(json_file["song"]);
 
+	// check: bpm failed?
+	if (song.bpm < 0.0) return false;
+	// check: song name failed? (this should never realistically happen)
+	if (song.name == "!!**!! UNKNOWN SONG !!**!!") return false;
+	
 	sim->artist = song.artist;
 	sim->title = song.name;
 	sim->format = SIM_FNF_PSYCH1X;
@@ -118,12 +116,14 @@ bool Load(StringRef path, json json_file, Simfile* sim)
 	c->artist = song.charter;
 	c->difficulty = DIFF_EDIT;
 	c->meter = 1;
-	c->style = gStyle->findStyle("dance-couple", 8, 1);
+	// "dance-routine" hides the colors for player nums, so.. yeah.
+	// "dance-double" it is.
+	c->style = gStyle->findStyle("dance-double", 8, 1);
 
-	/*if (!std::is_sorted(song.notes.begin(), song.notes.end(), LessThan))
+	if(!std::is_sorted(song.notes.begin(), song.notes.end(), LessThan))
 	{
 		std::sort(song.notes.begin(), song.notes.end(), LessThan);
-	}*/
+	}
 
 	TimingData timing;
 	timing.update(sim->tempo);
@@ -131,31 +131,22 @@ bool Load(StringRef path, json json_file, Simfile* sim)
 
 	for(auto& n : song.notes)
 	{
-		float t = n[0];
-		int d = n[1];
-		float slen = n[2];
+		const double t = n[0];
+		const int d = n[1];
+		const double slen = n[2];
+		const bool opp = d > 3;
 
-		uint dir = d + 4;
-
-		if(d >= 4 && d <= 7)
-		{
-			dir = d - 4;
-		}
-
-		int quant = 192;
-		int row = tracker.advance(t / 1000);
+		uint quant = 192;
+		int row = tracker.advance(std::ceil(t) / 1000);
 		if(slen > 0)
 		{
-			int endrow = timing.timeToRow(t / 1000 + slen / 1000);
-			c->notes.append({row, endrow, dir, 0, NOTE_STEP_OR_HOLD, (uint)quant});
+			int endrow = timing.timeToRow(t / 1000.0 + slen / 1000.0);
+			c->notes.append({row, endrow, (uint)(opp ? d % 4 : d % 4 + 4), /*(uint)(opp ? 0 : 1)*/0, NOTE_STEP_OR_HOLD, quant});
 		}
 		else
 		{
-			c->notes.append({row, row, dir, 0, NOTE_STEP_OR_HOLD, (uint)quant});
+			c->notes.append({row, row, (uint)(opp ? d % 4 : d % 4 + 4), /*(uint)(opp ? 0 : 1)*/0, NOTE_STEP_OR_HOLD, quant});
 		}
-
-		tracker.advance(-t);
-
 	}
 
 	sim->charts.push_back(c);
@@ -186,9 +177,6 @@ bool LoadFnf(StringRef path, Simfile* sim)
 
 	// TODO: handle other formats that Psych 1.X
 	return Psych1X::Load(path, data, sim);
-
-	// return true;
 }
-
 }
 }
