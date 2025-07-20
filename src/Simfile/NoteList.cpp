@@ -1,3 +1,4 @@
+#include <iostream>
 #include <Simfile/NoteList.h>
 
 #include <Core/Utils.h>
@@ -43,28 +44,28 @@ NoteList::~NoteList()
 
 NoteList::NoteList()
 	: myNotes(nullptr)
-	, myNum(0)
-	, myCap(0)
+	  , myNum(0)
+	  , myCap(0)
 {
 }
 
 NoteList::NoteList(List&& list)
 	: myNotes(list.myNotes)
-	, myNum(list.myNum)
-	, myCap(list.myCap)
+	  , myNum(list.myNum)
+	  , myCap(list.myCap)
 {
 	list.myNotes = nullptr;
 }
 
 NoteList::NoteList(const List& list)
 	: myNotes(nullptr)
-	, myNum(0)
-	, myCap(0)
+	  , myNum(0)
+	  , myCap(0)
 {
 	assign(list);
 }
 
-NoteList& NoteList::operator = (List&& list)
+NoteList& NoteList::operator =(List&& list)
 {
 	myNotes = list.myNotes;
 	myNum = list.myNum;
@@ -75,7 +76,7 @@ NoteList& NoteList::operator = (List&& list)
 	return *this;
 }
 
-NoteList& NoteList::operator = (const List& list)
+NoteList& NoteList::operator =(const List& list)
 {
 	assign(list);
 	return *this;
@@ -200,7 +201,7 @@ void NoteList::cleanup()
 		write += offset;
 	}
 
-	myNum = (int) (write - myNotes);
+	myNum = (int)(write - myNotes);
 }
 
 void NoteList::sanitize(const Chart* chart)
@@ -253,12 +254,12 @@ void NoteList::sanitize(const Chart* chart)
 			++numOverlapping;
 			note.row = -1;
 		}
-		else if(note.row < row || (note.row == row && note.col <= col))
+		else if(!note.fnf && (note.row < row || (note.row == row && note.col <= col)))
 		{
 			++numUnsorted;
 			note.row = -1;
 		}
-		else if (note.quant <= 0 || note.quant > 192)
+		else if(note.quant <= 0 || note.quant > 192)
 		{
 			++numInvalidQuant;
 			note.row = -1;
@@ -295,7 +296,7 @@ void NoteList::sanitize(const Chart* chart)
 		{
 			HudNote("Removed %i out of order note(s)%s.", numUnsorted, suffix.str());
 		}
-		if (numInvalidQuant > 0)
+		if(numInvalidQuant > 0)
 		{
 			HudNote("Removed %i note(s) with invalid quantization label(s)%s.", numInvalidQuant, suffix.str());
 		}
@@ -396,7 +397,7 @@ void NoteList::prepareEdit(const NoteEdit& in, NoteEditResult& out, bool clearRe
 			{
 				++nextAdd;
 			}
-			
+
 			nextAddRow = nextAddRows[col] = (nextAdd != addEnd) ? nextAdd->row : INT_MAX;
 			nextAddNotes[col] = nextAdd;
 		}
@@ -508,13 +509,13 @@ static void EncodeNote(WriteStream& out, const Note& in, TempoTimeTracker& track
 
 // If we are outputting something marked as a non-standard quantization,
 // adjust it to align with the expected custom snap.
-static void ApplyQuantOffset(Note& out, int offsetRows) 
+static void ApplyQuantOffset(Note& out, int offsetRows)
 {
 	int startingOffset = (out.row - offsetRows) % 192;
 	int endingOffset = out.row % 192;
 	int endingRowOffset = out.endrow % 192;
-	if (out.quant == 0 || out.quant > 192)
-	{ 
+	if(out.quant == 0 || out.quant > 192)
+	{
 		out.quant = 192;
 		HudError("Bug: Missing quantization label for note at %i", out.row);
 	}
@@ -522,10 +523,10 @@ static void ApplyQuantOffset(Note& out, int offsetRows)
 	// get quant-based index of starting note/offset: round(endingOffset / 192.0f * out.quant)
 	// recalculate the position in the measure of the quant: (int) round(192.0f / out.quant * (above)
 	// then make this the new measure offset
-	if (192 % out.quant > 0 && startingOffset != endingOffset)
+	if(192 % out.quant > 0 && startingOffset != endingOffset)
 	{
-		out.row = out.row - endingOffset + (int) round(192.0f / out.quant * round(endingOffset / 192.0f * out.quant));
-		out.endrow = out.endrow - endingRowOffset + (int) round(192.0f / out.quant * round(endingRowOffset / 192.0f * out.quant));
+		out.row = out.row - endingOffset + (int)round(192.0f / out.quant * round(endingOffset / 192.0f * out.quant));
+		out.endrow = out.endrow - endingRowOffset + (int)round(192.0f / out.quant * round(endingRowOffset / 192.0f * out.quant));
 	}
 }
 
@@ -536,7 +537,7 @@ static void DecodeNote(ReadStream& in, Note& out, int offsetRows)
 	{
 		int row = in.readNum() + offsetRows;
 		uchar quant = in.read<uchar>();
-		out = { row, row, col, 0, 0, quant };
+		out = {row, row, col, 0, 0, quant};
 	}
 	else
 	{

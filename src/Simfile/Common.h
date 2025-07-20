@@ -40,6 +40,14 @@ struct RowCol { int row, col; };
 struct Property { String tag, val; };
 
 /// Represents a single note.
-struct Note { int row, endrow; uint col : 8; uint player : 4; uint type : 4; uint quant : 8; };
+struct Note
+{
+	int row, endrow;
+	uint col : 8;
+	uint player : 4;
+	uint type : 4;
+	uint quant : 8;
+	bool fnf = false; // Only used for metadata + conversion-related exclusions.
+};
 
 }; // namespace Vortex

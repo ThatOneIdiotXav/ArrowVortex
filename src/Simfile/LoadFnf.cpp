@@ -1,24 +1,22 @@
 #include <iostream>
 
 #include "json.hpp"
-#include <string>
-#include <Simfile/Simfile.h>
-
-#include "Chart.h"
-#include "SegmentGroup.h"
-#include "Segments.h"
-#include "Tempo.h"
-#include "TimingData.h"
+#include "Editor/Common.h"
 #include "Editor/Editor.h"
 #include "Managers/StyleMan.h"
+#include "Simfile/Chart.h"
+#include "Simfile/SegmentGroup.h"
+#include "Simfile/Segments.h"
+#include "Simfile/Simfile.h"
+#include "Simfile/Tempo.h"
+#include "Simfile/TimingData.h"
 #include "System/File.h"
-
-#include <cmath>
 
 using json = nlohmann::json;
 
 namespace Vortex {
 namespace Fnf {
+
 namespace Psych1X {
 
 struct Song
@@ -37,7 +35,7 @@ struct Song
 	// Vector<Event> events; // ignored.
 };
 
-Song Parse(json j)
+Song ParseJson(json j)
 {
 	Song o;
 
@@ -50,8 +48,6 @@ Song Parse(json j)
 	o.gf_version = j.contains("gfVersion") ? j["gfVersion"].get<std::string>().data() : "gf";
 	o.bpm = j.contains("bpm") ? j["bpm"].get<float>() : -1;
 	o.name = j.contains("song") ? j["song"].get<std::string>().data() : "!!**!! UNKNOWN SONG !!**!!";
-
-	std::cout << "Parsed metadata for " << o.name.str() << "\n";
 
 	for(auto& s : j["notes"])
 	{
@@ -71,12 +67,20 @@ Song Parse(json j)
 			no.push_back(slen);
 
 			o.notes.push_back(no);
-
-			std::cout << "[ note ] time: " << time << " * dir: " << dir << " * suslen: " << slen << "\n";
 		}
 	}
 
 	return o;
+}
+
+static bool LessThan(const Vector<float> a, const Vector<float> b)
+{
+	// [0] = time
+	// [1] = direction
+	if (a[0] < b[0])
+		HudWarning("LessThan sorting happened: %d, %d", a[0], b[0]);
+		// std::cout << "LessThan: a: " << a[0] << " b: " << b.data()[0] << " res: " << (a[0] < b[0]) << "\n";
+	return a[0] < b[0];
 }
 
 /**
@@ -87,23 +91,31 @@ Song Parse(json j)
  */
 bool Load(StringRef path, json json_file, Simfile* sim)
 {
-	Song song = Parse(json_file["song"]);
+	Song song = ParseJson(json_file["song"]);
+
+	if(!std::is_sorted(song.notes.begin(), song.notes.end(), LessThan))
+	{
+		std::sort(song.notes.begin(), song.notes.end(), LessThan);
+	}
 
 	// check: bpm failed?
-	if (song.bpm < 0.0) return false;
+	if(song.bpm < 0.0) return false;
 	// check: song name failed? (this should never realistically happen)
-	if (song.name == "!!**!! UNKNOWN SONG !!**!!") return false;
-	
+	if(song.name == "!!**!! UNKNOWN SONG !!**!!") return false;
+
 	sim->artist = song.artist;
 	sim->title = song.name;
 	sim->format = SIM_FNF_PSYCH1X;
 	sim->genre = "FNF";
 
-	// TODO: make music be auto-detected
+	// FIXME: not having music be loaded with the chart causes weird off-sync
+	// issues, so this should be done before a release happens.
+	sim->music = R"(D:\Games\FNF\Engine - Psych\assets\songs\2hot\All.ogg)"; // hardcoded for now lol
 
-	BpmChange initial;
-	initial.bpm = song.bpm;
-	sim->tempo->segments->append(initial);
+	BpmChange initialBpm;
+	initialBpm.bpm = song.bpm;
+	sim->tempo->segments->append(initialBpm);
+	sim->tempo->offset = 0;
 
 	// notes
 	Chart* c = new Chart;
@@ -112,7 +124,7 @@ bool Load(StringRef path, json json_file, Simfile* sim)
 	c->meter = 1;
 	// "dance-routine" hides the colors for player nums, so.. yeah.
 	// "dance-double" it is.
-	c->style = gStyle->findStyle("dance-double", 8, 1);
+	c->style = gStyle->findStyle("dance-double");
 
 	TimingData timing;
 	timing.update(sim->tempo);
@@ -126,15 +138,15 @@ bool Load(StringRef path, json json_file, Simfile* sim)
 		const bool opp = d > 3;
 
 		uint quant = 192;
-		int row = tracker.advance(std::ceil(t) / 1000);
+		int row = tracker.lookAhead(std::ceil(t) / 1000);
 		if(slen > 0)
 		{
-			int endrow = timing.timeToRow(t / 1000.0 + slen / 1000.0);
-			c->notes.append({row, endrow, (uint)(opp ? d % 4 : d % 4 + 4), /*(uint)(opp ? 0 : 1)*/0, NOTE_STEP_OR_HOLD, quant});
+			int endrow = timing.timeToRow(std::ceil(t) / 1000.0 + std::ceil(slen) / 1000.0);
+			c->notes.append({row, endrow, static_cast<uint>(opp ? d % 4 : d % 4 + 4), /*(uint)(opp ? 0 : 1)*/0, NOTE_STEP_OR_HOLD, quant, true});
 		}
 		else
 		{
-			c->notes.append({row, row, (uint)(opp ? d % 4 : d % 4 + 4), /*(uint)(opp ? 0 : 1)*/0, NOTE_STEP_OR_HOLD, quant});
+			c->notes.append({row, row, static_cast<uint>(opp ? d % 4 : d % 4 + 4), /*(uint)(opp ? 0 : 1)*/0, NOTE_STEP_OR_HOLD, quant, true});
 		}
 	}
 
@@ -165,7 +177,10 @@ bool LoadFnf(StringRef path, Simfile* sim)
 	}
 
 	// TODO: handle other formats that Psych 1.X
-	return Psych1X::Load(path, data, sim);
+	success = Psych1X::Load(path, data, sim);
+	
+
+	return success;
 }
 }
 }
