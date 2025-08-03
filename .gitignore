@@ -404,3 +404,6 @@ build/VisualStudio/ArrowVortex.vcxproj
 /bin/ArrowVortex.exe
 /bin/settings/recent files.txt
 /bin/settings/settings.txt
+
+# oggenc
+/bin/[Oo]ggenc2.exe
