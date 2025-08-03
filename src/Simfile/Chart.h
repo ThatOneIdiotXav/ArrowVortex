@@ -14,6 +14,8 @@ struct Chart : NonCopyable
 	Chart();
 	~Chart();
 
+	bool skip_unsorted = false;
+	
 	// Returns the difficulty and meter of the chart (e.g. "Challenge 12").
 	String description() const;
 

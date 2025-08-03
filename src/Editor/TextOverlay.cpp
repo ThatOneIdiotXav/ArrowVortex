@@ -148,6 +148,9 @@ void LoadShortcuts()
 	addShortcut(Action::OPEN_DIALOG_GENERATE_NOTES, "Generate notes");
 	addShortcut(Action::OPEN_DIALOG_TEMPO_BREAKDOWN, "Tempo breakdown");
 
+	addShortcutHeader("FNF-relateds");
+	addShortcut(Action::OPEN_DIALOG_FNF_DEFINE_ENGINE, "Define FNF engine");
+
 	addShortcutHeader("Selection");
 	addShortcut(Action::SELECT_REGION, "Select region");
 	addShortcut(Action::SELECT_REGION_BEFORE_CURSOR, "Select region before cursor");

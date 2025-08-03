@@ -254,7 +254,7 @@ void NoteList::sanitize(const Chart* chart)
 			++numOverlapping;
 			note.row = -1;
 		}
-		else if(!note.fnf && (note.row < row || (note.row == row && note.col <= col)))
+		else if(!chart->skip_unsorted && (note.row < row || (note.row == row && note.col <= col)))
 		{
 			++numUnsorted;
 			note.row = -1;

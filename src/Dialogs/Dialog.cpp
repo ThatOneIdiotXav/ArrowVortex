@@ -17,7 +17,8 @@ static const char* IdStrings[NUM_DIALOG_IDS] =
 	"tempoBreakdown",
 	"waveformSettings",
 	"zoom",
-	"customSnap"
+	"customSnap",
+	"fnfDefineEngine",
 };
 
 EditorDialog::~EditorDialog()

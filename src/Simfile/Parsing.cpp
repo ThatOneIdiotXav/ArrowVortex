@@ -22,22 +22,25 @@ namespace Vortex {
 // External load and save functions.
 
 #define LOAD_ARGS StringRef path, Simfile* sim
+#define LOAD_FNF_ARGS StringRef path, Simfile* sim, SimFormat format
 #define SAVE_ARGS const Simfile* sim, bool backup
 
 namespace Sm {
-bool LoadSm(LOAD_ARGS);  // Defined in LoadSm.cpp
-bool SaveSm(SAVE_ARGS);  // Defined in SaveSm.cpp
-bool SaveSsc(SAVE_ARGS); // Defined in SaveSm.cpp
+bool LoadSm(LOAD_ARGS);					// Defined in LoadSm.cpp
+bool SaveSm(SAVE_ARGS);					// Defined in SaveSm.cpp
+bool SaveSsc(SAVE_ARGS);				// Defined in SaveSm.cpp
 };
 namespace Osu {
-bool LoadOsu(LOAD_ARGS); // Defined in LoadOsu.cpp
-bool SaveOsu(SAVE_ARGS); // Defined in SaveOsu.cpp
+bool LoadOsu(LOAD_ARGS);				// Defined in LoadOsu.cpp
+bool SaveOsu(SAVE_ARGS);				// Defined in SaveOsu.cpp
 };
 namespace Dwi {
-bool LoadDwi(LOAD_ARGS); // Defined in LoadDwi.cpp
+bool LoadDwi(LOAD_ARGS);				// Defined in LoadDwi.cpp
 }
 namespace Fnf {
-bool LoadFnf(LOAD_ARGS); // Defined in LoadFnf.cpp
+SimFormat DetectFormat(StringRef path);	// Defined in LoadFnf.cpp
+
+bool LoadFnf(LOAD_FNF_ARGS);			// Defined in LoadFnf.cpp
 }
 
 // ================================================================================================
@@ -222,7 +225,9 @@ bool LoadSimfile(Simfile& sim, StringRef path)
 	}
 	else if(ext == "json")
 	{
-		success = Fnf::LoadFnf(filePath, &sim);
+		SimFormat form = Fnf::DetectFormat(filePath);
+
+		success = Fnf::LoadFnf(filePath, &sim, form);
 	}
 	else
 	{

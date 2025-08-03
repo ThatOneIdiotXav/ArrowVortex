@@ -34,10 +34,16 @@ enum Difficulty
 };
 
 /// Represents a row/column index.
-struct RowCol { int row, col; };
+struct RowCol
+{
+	int row, col;
+};
 
 // Represents a generic tag/value property.
-struct Property { String tag, val; };
+struct Property
+{
+	String tag, val;
+};
 
 /// Represents a single note.
 struct Note
@@ -47,7 +53,6 @@ struct Note
 	uint player : 4;
 	uint type : 4;
 	uint quant : 8;
-	bool fnf = false; // Only used for metadata + conversion-related exclusions.
 };
 
 }; // namespace Vortex

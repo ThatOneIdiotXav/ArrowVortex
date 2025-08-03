@@ -75,6 +75,9 @@ void Action::perform(Type action)
 	CASE(OPEN_DIALOG_CUSTOM_SNAP)
 		gEditor->openDialog(DIALOG_CUSTOM_SNAP);
 
+	CASE(OPEN_DIALOG_FNF_DEFINE_ENGINE)
+		gEditor->openDialog(DIALOG_FNF_DEFINE_ENGINE);
+
 	CASE(EDIT_UNDO)
 		gSystem->getEvents().addKeyPress(Key::Z, Keyflag::CTRL, false);
 	CASE(EDIT_REDO)
