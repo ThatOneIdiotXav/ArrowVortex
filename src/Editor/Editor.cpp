@@ -51,8 +51,6 @@
 #include <Dialogs/Zoom.h>
 #include <Dialogs/CustomSnap.h>
 
-#include <Dialogs/FnfDefineEngine.h>
-
 namespace Vortex {
 
 extern String VerifySaveLoadIdentity(const Simfile& simfile);
@@ -755,9 +753,8 @@ void handleDialogOpening(DialogId id, recti rect)
 	case DIALOG_CUSTOM_SNAP:
 		dlg = new DialogCustomSnap; break;
 
-	case DIALOG_FNF_DEFINE_ENGINE:
-		dlg = new Fnf::DialogDefineEngine; break;
 	}
+
 
 	dlg->setId(id);
 

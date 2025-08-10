@@ -18,7 +18,6 @@ static const char* IdStrings[NUM_DIALOG_IDS] =
 	"waveformSettings",
 	"zoom",
 	"customSnap",
-	"fnfDefineEngine",
 };
 
 EditorDialog::~EditorDialog()

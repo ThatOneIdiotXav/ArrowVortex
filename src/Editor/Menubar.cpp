@@ -345,10 +345,6 @@ void init(Item* menu)
 	add(hViewCursor, CURSOR_CHART_START, "First beat");
 	add(hViewCursor, CURSOR_CHART_END, "Last beat");
 
-	// FNF-relateds
-	Item* hFnf = newMenu();
-	add(hFnf, OPEN_DIALOG_FNF_DEFINE_ENGINE, "Define FNF engine");
-
 	// View > Statusbar menu.
 	myStatusMenu = newMenu();
 	add(myStatusMenu, TOGGLE_STATUS_CHART, "Show chart");
@@ -397,7 +393,6 @@ void init(Item* menu)
 	sub(menu, hChart, "Chart");
 	sub(menu, hNotes, "Notes");
 	sub(menu, hTempo, "Tempo");
-	sub(menu, hFnf, "FNF-related");
 	sub(menu, hAudio, "Audio");
 	sub(menu, myViewMenu, "View");
 	sub(menu, hHelp, "Help");
