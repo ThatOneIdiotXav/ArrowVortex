@@ -22,8 +22,12 @@ namespace Vortex {
 // External load and save functions.
 
 #define LOAD_ARGS StringRef path, Simfile* sim
-#define LOAD_FNF_ARGS StringRef path, Simfile* sim, SimFormat format
 #define SAVE_ARGS const Simfile* sim, bool backup
+
+// ===================================================================================
+// External load and save functions, specifically for FNF formats.
+#define LOAD_FNF_ARGS StringRef path, Simfile* sim, SimFormat format
+#define SAVE_FNF_ARGS const Simfile* sim, bool backup, SimFormat format
 
 namespace Sm {
 bool LoadSm(LOAD_ARGS);					// Defined in LoadSm.cpp
@@ -39,7 +43,6 @@ bool LoadDwi(LOAD_ARGS);				// Defined in LoadDwi.cpp
 }
 namespace Fnf {
 SimFormat DetectFormat(StringRef path);	// Defined in LoadFnf.cpp
-
 bool LoadFnf(LOAD_FNF_ARGS);			// Defined in LoadFnf.cpp
 }
 

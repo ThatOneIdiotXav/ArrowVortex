@@ -4,6 +4,8 @@
 
 #include "Core/Vector.h"
 #include "Simfile/Simfile.h"
+#include "System/File.h"
+
 using json = nlohmann::json;
 using namespace std;
 
@@ -59,19 +61,16 @@ public:
 		const string format = "psych_v1"; // format: chart format (will always be "psych_v1" for this)
 		float bpm = -1.f; // bpm: initial bpm at song start
 		bool needs_voices = true; // needsVoices: whether or not Voices[-name].ogg files need to be read as well
-		string song = ""; // song: the actual song name
+		string song; // song: the actual song name
 		float offset = .0f; // offset: song offset?
 	};
 
-	#define CONV_ARGS Song s, Simfile* sim
-
-
 	static Song Parse(json json);
-	static bool ConvertToSim(CONV_ARGS);
-	static bool ConvertToFnf(CONV_ARGS);
+	static bool ConvertToSim(StringRef path, Song s, Simfile* sim);
 	static bool Load(StringRef path, Simfile* sim);
 
 private:
+	static std::string GetMusicFile(Path path);
 };
 
 }

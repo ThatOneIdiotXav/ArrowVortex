@@ -138,7 +138,7 @@ static bool EndsWithSlash(StringRef path)
 static void AddItems(Vector<PathItem>& out, StringRef path)
 {
 	auto begin = GetDirStart(path), end = path.end();
-	for(const char* a = begin, *b = begin; *a; ++b)
+	for(const char *a = begin, *b = begin; *a; ++b)
 	{
 		if(*b == '\\' || *b == '/' || *b == 0)
 		{
@@ -287,6 +287,22 @@ void Path::dropFile()
 	Str::erase(str, static_cast<int>(file - str.begin()));
 }
 
+void Path::dropFolder(bool include_file)
+{
+	if (include_file)
+	{
+		this->dropExt();
+		this->dropFile();
+	}
+	
+	Path path = Str::create(GetTopDir(str), GetFileStart(str));
+	
+	std::string topdir = path.topdir().str();
+	std::string tmppath = str.str();
+
+	str = Path(tmppath.substr(0, tmppath.size() - topdir.size()).c_str());
+}
+
 int Path::attributes() const
 {
 	DWORD out = 0, a = GetFileAttributesW(Widen(str).str());
@@ -294,8 +310,8 @@ int Path::attributes() const
 	{
 		out |= File::ATR_EXISTS;
 		if(a & FILE_ATTRIBUTE_DIRECTORY) out |= File::ATR_DIR;
-		if(a & FILE_ATTRIBUTE_HIDDEN)    out |= File::ATR_HIDDEN;
-		if(a & FILE_ATTRIBUTE_READONLY)  out |= File::ATR_READ_ONLY;
+		if(a & FILE_ATTRIBUTE_HIDDEN) out |= File::ATR_HIDDEN;
+		if(a & FILE_ATTRIBUTE_READONLY) out |= File::ATR_READ_ONLY;
 	}
 	return out;
 }
@@ -355,7 +371,7 @@ String Path::brief() const
 	return out;
 }
 
-Path Path::operator + (StringRef items) const
+Path Path::operator +(StringRef items) const
 {
 	Path out(*this);
 	out.push(items);
@@ -383,7 +399,7 @@ bool FileReader::open(StringRef path)
 
 void FileReader::close()
 {
-	if (file)
+	if(file)
 	{
 		fclose(static_cast<FILE*>(file));
 		file = nullptr;
@@ -392,7 +408,7 @@ void FileReader::close()
 
 size_t FileReader::size() const
 {
-	if (!file) return 0;
+	if(!file) return 0;
 	long pos = ftell(static_cast<FILE*>(file));
 	fseek(static_cast<FILE*>(file), 0, SEEK_END);
 	size_t size = ftell(static_cast<FILE*>(file));
@@ -417,7 +433,7 @@ int FileReader::seek(long offset, int origin)
 
 void FileReader::skip(size_t n)
 {
-	if (file) fseek(static_cast<FILE*>(file), static_cast<long>(n), SEEK_CUR);
+	if(file) fseek(static_cast<FILE*>(file), static_cast<long>(n), SEEK_CUR);
 }
 
 bool FileReader::eof()
@@ -489,7 +505,11 @@ long getSize(StringRef path)
 String getText(StringRef path, bool* success)
 {
 	FILE* fp = OpenFile(path, false);
-	if(!fp) { if(success) *success = false;  return String(); }
+	if(!fp)
+	{
+		if(success) *success = false;
+		return String();
+	}
 	fseek(fp, 0, SEEK_END);
 	long size = ftell(fp);
 	String out(size, 0);
@@ -507,16 +527,20 @@ Vector<String> getLines(StringRef path, bool* success)
 
 	Vector<String> out;
 	FILE* fp = OpenFile(path, false);
-	if(!fp) { if(success) *success = false; return out; }
+	if(!fp)
+	{
+		if(success) *success = false;
+		return out;
+	}
 	out.append();
 	std::array<char, kBufferSize> buffer;
-	for (size_t bytesRead; bytesRead = fread(buffer.data(), kNumberOne, buffer.size(), fp);)
+	for(size_t bytesRead; bytesRead = fread(buffer.data(), kNumberOne, buffer.size(), fp);)
 	{
 		if(bytesRead > 0 && isNewline(buffer[0]) && out.back().len())
 		{
 			out.append();
 		}
-		for (size_t pos = 0, end = 0; pos < bytesRead;)
+		for(size_t pos = 0, end = 0; pos < bytesRead;)
 		{
 			while(pos < bytesRead && isNewline(buffer[pos]))
 			{
@@ -611,7 +635,8 @@ static void AddFilesInDir(Vector<Path>& out, const WideString& path, bool recurs
 	HANDLE hFind = FindFirstFileW(searchpath.str(), &ffd);
 	if(hFind != INVALID_HANDLE_VALUE)
 	{
-		do {
+		do
+		{
 			if(wcscmp(ffd.cFileName, L".") != 0 && wcscmp(ffd.cFileName, L"..") != 0)
 			{
 				bool isSubDirectory = (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
@@ -656,10 +681,10 @@ Vector<Path> findFiles(StringRef path, bool recursive, const char* filters)
 	Vector<String> filterlist;
 	if(filters)
 	{
-		for(const char* begin = filters, *end = begin; true; end = begin)
+		for(const char *begin = filters, *end = begin; true; end = begin)
 		{
 			while(*end && *end != ';') ++end;
-			if (end != begin) filterlist.push_back(String(begin, static_cast<int>(end - begin)));
+			if(end != begin) filterlist.push_back(String(begin, static_cast<int>(end - begin)));
 			if(*end == 0) break;
 			begin = end + 1;
 		}

@@ -4,7 +4,9 @@
 
 namespace Vortex {
 namespace Fnf {
-	static std::map<SimFormat, String> formats{{SIM_FNF_PSYCH1X, "Psych 1.X"}};
+	static std::map<SimFormat, String> formats{
+		{SIM_FNF_PSYCH1X, "Psych 1.X"}
+	};
 
 }
 }

@@ -96,10 +96,8 @@ Psych1X::Song Psych1X::Parse(json json)
 	return song;
 }
 
-bool Psych1X::ConvertToSim(Song s, Simfile* sim)
+bool Psych1X::ConvertToSim(StringRef path, Song s, Simfile* sim)
 {
-	std::cout << s.notes << "\n";
-
 	if(s.bpm < 0.0f)
 	{
 		return false;
@@ -108,8 +106,9 @@ bool Psych1X::ConvertToSim(Song s, Simfile* sim)
 	sim->artist = "Unknown";
 	sim->title = s.song.c_str();
 	sim->format = SIM_FNF_PSYCH1X;
-	// TODO: autodetect music file
-	sim->music = "";
+	
+	std::string musicPath = GetMusicFile(path);
+	sim->music = musicPath.c_str();
 
 	BpmChange initialBpm;
 	HudInfo("%f", s.bpm);
@@ -157,26 +156,49 @@ bool Psych1X::ConvertToSim(Song s, Simfile* sim)
 	return true;
 }
 
-bool Psych1X::ConvertToFnf(Song s, Simfile* sim)
+std::string Psych1X::GetMusicFile(Path path)
 {
+	if(path.filename().empty()) throw exception("given path is empty");
 
+	// get song title (we'll need it)
+	std::string title = path.topdir().str();
+	title = title.substr(0, title.size()-1);
+	HudInfo("Trying to get Inst.ogg for %s...", title.c_str());
+	
+	// drop two folders (removing the file too on the first go)
+	path.dropFolder(true); // would be [engine root]/assets/[shared (if src)/]data/
+	path.dropFolder(); // would be [engine root]/assets/[shared (if src)/]
 
-	return true;
+	if (std::strcmp(path.topdir().str(), "shared\\") == 0)
+	{
+		HudInfo("shared folder detected - going back one more.");
+		// source assets folder, so drop another folder
+		path.dropFolder();
+	}
+
+	// append the path to reach the Inst.ogg file
+	path.push("songs", true);
+	path.push(title.c_str(), true);
+	path.push("Inst.ogg", false);
+	
+	HudInfo("Attempting to load song from assumed path: %s", path.str.str());
+
+	// return path to Inst.ogg file
+	return path.str.str();
 }
 
 bool Psych1X::Load(StringRef path, Simfile* sim)
 {
-	json json;
-
 	// parse json
 	bool success = false;
-	json = json::parse(File::getText(path, &success).str());
-	if(!success) throw "wasn't able to load the json contents";
+	String file = File::getText(path, &success);
+	if(!success) throw exception("wasn't able to load the json contents");
+	json json_file = json::parse(file.str());
 
 	// parse chart data
-	Song song = Parse(json);
+	Song song = Parse(json_file);
 
-	return ConvertToSim(song, sim);
+	return ConvertToSim(path, song, sim);
 }
 
 }

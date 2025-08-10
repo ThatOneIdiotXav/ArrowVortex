@@ -37,6 +37,9 @@ struct Path
 	/// Removes the filename portion of the path.
 	void dropFile();
 
+	/// Removes the top-most folder from the path.
+	void dropFolder(bool include_file = false);
+
 	/// Returns the attributes of the file/directory.
 	int attributes() const;
 
